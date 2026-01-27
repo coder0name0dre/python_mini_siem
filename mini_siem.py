@@ -1,9 +1,18 @@
+import re
 import json
+from datetime import datetime
 
 LOG_FILE = "logs.txt"
 ALERT_OUTPUT = "alerts.json"
 
-# These events are considered suspicious
+# Regex pattern for structured logs
+LOG_PATTERN = re.compile(
+    r'(?P<timestamp>\d{2}-\d{2}-\d{4}\s\d{2}:\d{2}:\d{2})\s\|\s'
+    r'(?P<ip>[\d\.]+)\s\|\s'
+    r'(?P<user>\w+)\s\|\s'
+    r'(?P<event>\w+)'
+)
+
 SUSPICIOUS_EVENTS = [
     "RM_RF",
     "SUDO_FAIL",
@@ -13,31 +22,32 @@ SUSPICIOUS_EVENTS = [
 def run_siem():
     alerts = []
 
-    # Open the log file
     with open(LOG_FILE, "r") as logs:
         for line in logs:
-            # Split the log line into parts
-            # Format: TIMESTAMP | IP | USER | EVENT
-            parts = line.strip().split(" | ")
+            match = LOG_PATTERN.match(line.strip())
 
-            # Skip malformed logs
-            if len(parts) != 4:
+            # Skip logs that don't match expected format
+            if not match:
                 continue
 
-            timestamp, ip, user, event = parts
+            log = match.groupdict()
 
-            # Check if the event is suspicious
-            if event in SUSPICIOUS_EVENTS:
+            # Convert timestamp string to datetime object
+            log["timestamp"] = datetime.strptime(
+                log["timestamp"], "%d-%m-%Y %H:%M:%S"
+            )
+
+            # Check for suspicious actions
+            if log["event"] in SUSPICIOUS_EVENTS:
                 alerts.append({
-                    "timestamp": timestamp,
+                    "timestamp": log["timestamp"].strftime("%d-%m-%Y %H:%M:%S"),
                     "severity": "MEDIUM",
-                    "ip": ip,
-                    "user": user,
-                    "event": event,
+                    "ip": log["ip"],
+                    "user": log["user"],
+                    "event": log["event"],
                     "message": "Suspicious command detected"
                 })
 
-    # Save alerts to JSON
     with open(ALERT_OUTPUT, "w") as out:
         json.dump(alerts, out, indent=4)
 
