@@ -1,6 +1,6 @@
 # Python Mini SIEM
 
-This is a Python project that demonstrates how a basic SIEM (Security Information and Event Management) ingests logs, parses events, correlates activity over time, checks threat intelligence, and generates security alerts.
+This is a Python project that demonstrates how a basic SIEM (Security Information and Event Management) ingests logs, parses events, correlates activity over time, checks threat intelligence and generates security alerts.
 
 ---
 
